@@ -1,0 +1,14 @@
+{
+  "templates": [
+    {
+      "name": "welcome_email",
+      "from": "from@mail.com",
+      "subjectKey": "welcome.subject",
+      "enabled": true
+    }
+  ],
+  "languages": [
+    "fr-FR",
+    "en-US"
+  ]
+}
