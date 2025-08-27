@@ -47,7 +47,17 @@ const createLanguageCondition = (
 };
 
 export const localizeMessage = (messageKey: string): string => {
-  const [firstLanguage, ...restLanguages] = languages;
+  // Extract enabled languages and sort by priority
+  const enabledLanguageCodes = languages
+    .filter((lang) => lang.enabled)
+    .sort((a, b) => a.priority - b.priority)
+    .map((lang) => lang.code as LocaleCode);
+
+  if (enabledLanguageCodes.length === 0) {
+    throw new Error('No enabled languages found in configuration');
+  }
+
+  const [firstLanguage, ...restLanguages] = enabledLanguageCodes;
   const firstCondition = createLanguageCondition(messageKey, firstLanguage, ConditionType.FIRST);
   const middleConditions = restLanguages.map((language) =>
     createLanguageCondition(messageKey, language, ConditionType.MIDDLE)

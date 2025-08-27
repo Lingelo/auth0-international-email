@@ -1,14 +1,131 @@
 {
+  "name": "Auth0 International Email Templates",
+  "version": "2.0.0",
   "templates": [
     {
       "name": "welcome_email",
-      "from": "from@mail.com",
+      "from": "noreply@auth0.com",
       "subjectKey": "welcome.subject",
-      "enabled": true
+      "enabled": true,
+      "variables": {
+        "companyName": "Auth0",
+        "supportEmail": "support@auth0.com"
+      },
+      "preprocessors": ["minifier"],
+      "postprocessors": ["asset-optimizer"]
+    },
+    {
+      "name": "password_reset",
+      "from": "security@auth0.com",
+      "subjectKey": "password.reset.subject",
+      "enabled": false,
+      "variables": {
+        "resetTimeout": "24 hours"
+      }
     }
   ],
   "languages": [
-    "fr-FR",
-    "en-US"
-  ]
+    {
+      "code": "en-US",
+      "name": "English (United States)",
+      "enabled": true,
+      "priority": 1,
+      "fallback": null
+    },
+    {
+      "code": "fr-FR",
+      "name": "Français (France)",
+      "enabled": true,
+      "priority": 2,
+      "fallback": "en-US"
+    },
+    {
+      "code": "es-ES",
+      "name": "Español (España)",
+      "enabled": true,
+      "priority": 3,
+      "fallback": "en-US"
+    }
+  ],
+  "build": {
+    "outputDir": "dist/output",
+    "cleanOutput": true,
+    "parallel": true,
+    "maxWorkers": 4,
+    "sourceMaps": true,
+    "minify": true,
+    "watch": false
+  },
+  "validation": {
+    "html": {
+      "enabled": true,
+      "strict": false,
+      "rules": {
+        "doctype": true,
+        "lang-attribute": true,
+        "no-script-tags": true
+      }
+    },
+    "liquid": {
+      "enabled": true,
+      "syntax": "loose"
+    },
+    "translations": {
+      "checkMissing": true,
+      "checkUnused": true,
+      "checkDuplicates": true
+    }
+  },
+  "plugins": [
+    {
+      "name": "html-validator",
+      "enabled": true,
+      "runBefore": ["minifier"],
+      "options": {
+        "strict": false,
+        "format": "text"
+      }
+    },
+    {
+      "name": "minifier",
+      "enabled": true,
+      "runAfter": ["html-validator"],
+      "options": {
+        "removeComments": true,
+        "removeWhitespace": true,
+        "preserveLineBreaks": false
+      }
+    },
+    {
+      "name": "asset-optimizer",
+      "enabled": false,
+      "runAfter": ["minifier"],
+      "options": {
+        "optimizeImages": true,
+        "inlineSmallAssets": true,
+        "compressCSS": true
+      }
+    },
+    {
+      "name": "analytics",
+      "enabled": true,
+      "options": {
+        "collectMetrics": true,
+        "endpoint": "https://analytics.example.com/api/build-metrics"
+      }
+    }
+  ],
+  "cache": {
+    "enabled": true,
+    "ttl": 3600,
+    "maxSize": 100,
+    "strategy": "hybrid",
+    "directory": ".cache"
+  },
+  "monitoring": {
+    "enabled": true,
+    "collectMetrics": true,
+    "logLevel": "info",
+    "outputFormat": "structured"
+  }
 }

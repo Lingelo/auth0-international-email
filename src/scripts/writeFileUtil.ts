@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra';
-import { localizeMessage } from '../main';
+import { localizeMessage } from './localizeMessage';
 import { TemplateConfig, A0DeployConfig } from '../types';
 
 export const writeFileTemplate = (name: string, content: string): void => {

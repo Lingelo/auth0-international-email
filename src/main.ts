@@ -1,55 +1,54 @@
-import { writeConfiguration, writeFileTemplate } from './scripts/writeFileUtil';
-import { templates, languages } from '../config.json';
-import { readTemplate } from './templates/util';
-import { ProjectConfig } from './types';
+#!/usr/bin/env node
 
-export { localizeMessage } from './scripts/localizeMessage';
+import { Logger } from './utils/Logger';
+import { CliApp } from './cli/CliApp';
 
-const config: ProjectConfig = { templates, languages };
+// Initialize logger
+const logger = new Logger({
+  level: process.env.LOG_LEVEL as any || 'info',
+  format: process.env.LOG_FORMAT as any || 'text',
+  enableColors: process.env.NO_COLOR !== '1'
+});
 
+// Create and run CLI application
+const cli = new CliApp(logger);
 
-if (config.templates.length === 0) {
-    throw new Error('No templates found');
+async function main() {
+  try {
+    const args = process.argv.slice(2);
+    const exitCode = await cli.run(args);
+    process.exit(exitCode);
+  } catch (error) {
+    logger.error('Fatal error', { error });
+    process.exit(1);
+  }
 }
 
-if (config.languages.length === 0) {
-    throw new Error('No languages found');
+// Handle uncaught exceptions and rejections
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught exception', { error });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled rejection', { reason, promise });
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  logger.info('Received SIGINT, shutting down gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('Received SIGTERM, shutting down gracefully...');
+  process.exit(0);
+});
+
+// Run the application
+if (require.main === module) {
+  main();
 }
 
-const validateHTML = async (templateContent: string): Promise<void> => {
-    const validator = require('html-validator');
-    const options = {
-        data: templateContent,
-        format: 'text',
-    };
-    try {
-        const result = await validator(options);
-        console.log(result);
-    } catch (error) {
-        console.error('HTML validation error:', error);
-    }
-};
-
-const generateTemplates = async (): Promise<void> => {
-    for (const template of config.templates) {
-        console.log(`Internationalizing: ${template.name}.html`);
-        const templateContent = readTemplate(template.name);
-        await validateHTML(templateContent);
-        writeFileTemplate(template.name, templateContent);
-        writeConfiguration(template);
-        console.log(`Internationalized: ${template.name}.html DONE`);
-    }
-};
-
-const main = (): void => {
-    console.log('Starting internationalization process...');
-    generateTemplates()
-        .then(() => console.log('All internationalization completed successfully!'))
-        .catch((error) => {
-            console.error('Internationalization failed:', error);
-            process.exit(1);
-        });
-};
-
-main();
-
+export { main };

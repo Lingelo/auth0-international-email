@@ -1,32 +1,50 @@
 {
   "name": "auth0-template-generator",
   "version": "1.0.0",
-  "description": "Auth0 internationalized email template generator with secure Liquid template processing",
-  "main": "./src/main.ts",
+  "description": "Modern Auth0 internationalized email template generator with enterprise-grade CLI, security, and performance features",
+  "main": "./dist/src/main.js",
+  "bin": {
+    "auth0-template-generator": "./dist/src/main.js"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
   },
   "scripts": {
-    "build": "yarn clean && tsc && yarn copy-languages && yarn copy-templates",
+    "build": "yarn clean && tsc && yarn copy-assets",
     "clean": "rm -rf ./dist",
-    "copy-languages": "mkdir -p ./dist/languages && cp -r ./src/languages/* ./dist/languages",
-    "copy-templates": "cp -r ./src/templates/*.html ./dist/templates",
-    "generate": "rm -rf ./output && node ./dist/src/main.js",
+    "copy-assets": "mkdir -p ./dist/languages ./dist/templates && cp -r ./src/languages/* ./dist/languages && cp -r ./src/templates/*.html ./dist/templates",
+    
+    "generate": "yarn build && node dist/src/main.js build --config config.json",
+    "init": "yarn build && node dist/src/main.js init",
+    "validate": "node dist/src/main.js validate --config config.json",
+    "validate:templates": "node dist/src/main.js validate --templates --config config.json",
+    "validate:translations": "node dist/src/main.js validate --translations --config config.json",
+    "add-language": "node dist/src/main.js add-language",
+    "analyze": "node dist/src/main.js analyze --config config.json",
+    "watch": "node dist/src/main.js build --watch --config config.json",
+    
+    "dev": "yarn generate",
+    "start": "yarn generate",
+    
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
     "format:check": "prettier --check src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    
     "test": "jest",
     "test:watch": "jest --watch",
-    "typecheck": "tsc --noEmit",
-    "dev": "yarn build && yarn generate"
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "fs-extra": "^9.0.12"
+    "fs-extra": "^9.0.12",
+    "inquirer": "^8.2.6"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.12",
+    "@types/inquirer": "^8.2.10",
+    "@types/jest": "^29.5.12",
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^7.6.0",
     "@typescript-eslint/parser": "^7.6.0",
@@ -36,10 +54,9 @@
     "globals": "^15.0.0",
     "html-validator": "^5.1.18",
     "jest": "^29.7.0",
-    "@types/jest": "^29.5.12",
-    "ts-jest": "^29.1.2",
     "prettier": "^3.2.5",
     "serve": "^14.0.1",
+    "ts-jest": "^29.1.2",
     "typescript": "^4.7.4"
   }
 }
