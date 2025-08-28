@@ -2,9 +2,9 @@
   "name": "auth0-template-generator",
   "version": "1.0.0",
   "description": "Modern Auth0 internationalized email template generator with enterprise-grade CLI, security, and performance features",
-  "main": "./dist/src/main.js",
+  "main": "./dist/main.js",
   "bin": {
-    "auth0-template-generator": "./dist/src/main.js"
+    "auth0-template-generator": "./dist/main.js"
   },
   "license": "MIT",
   "engines": {
@@ -15,14 +15,14 @@
     "clean": "rm -rf ./dist",
     "copy-assets": "mkdir -p ./dist/languages ./dist/templates && cp -r ./src/languages/* ./dist/languages && cp -r ./src/templates/*.html ./dist/templates",
     
-    "generate": "yarn build && node dist/src/main.js build --config config.json",
-    "init": "yarn build && node dist/src/main.js init",
-    "validate": "node dist/src/main.js validate --config config.json",
-    "validate:templates": "node dist/src/main.js validate --templates --config config.json",
-    "validate:translations": "node dist/src/main.js validate --translations --config config.json",
-    "add-language": "node dist/src/main.js add-language",
-    "analyze": "node dist/src/main.js analyze --config config.json",
-    "watch": "node dist/src/main.js build --watch --config config.json",
+    "generate": "yarn build && node dist/main.js build --config config.json",
+    "init": "yarn build && node dist/main.js init",
+    "validate": "node dist/main.js validate --config config.json",
+    "validate:templates": "node dist/main.js validate --templates --config config.json",
+    "validate:translations": "node dist/main.js validate --translations --config config.json",
+    "add-language": "node dist/main.js add-language",
+    "analyze": "node dist/main.js analyze --config config.json",
+    "watch": "node dist/main.js build --watch --config config.json",
     
     "dev": "yarn generate",
     "start": "yarn generate",

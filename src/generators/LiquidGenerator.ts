@@ -1,7 +1,15 @@
 import * as path from 'path';
 import { BaseGenerator, GenerationContext, GenerationResult } from './BaseGenerator';
-import { A0DeployConfig } from '../types';
 import { Logger } from '../utils/Logger';
+
+interface A0DeployConfig {
+  body: string;
+  enabled: boolean;
+  from: string;
+  subject: string;
+  syntax: 'liquid';
+  template: string;
+}
 
 export class LiquidGenerator extends BaseGenerator {
   constructor(logger: Logger) {

@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: 🚀 Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: 📦 Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: 🔍 Run security audit
+        run: yarn audit --level moderate
+
+      - name: 🧪 Run tests
+        run: yarn test
+
+      - name: 🏗️ Build project
+        run: yarn build
+
+      - name: ✅ Validate build
+        run: yarn generate
+
+      - name: 📋 Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: 📝 Generate changelog
+        id: changelog
+        run: |
+          echo "## 🚀 What's New in v${{ steps.version.outputs.version }}" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "### ✨ Features & Improvements" >> CHANGELOG.md
+          echo "- Modern Auth0 email template generation" >> CHANGELOG.md
+          echo "- Enterprise-grade CLI with interactive commands" >> CHANGELOG.md
+          echo "- Bilingual support (English/French)" >> CHANGELOG.md
+          echo "- Advanced security and performance features" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "### 🛠️ Technical Details" >> CHANGELOG.md
+          echo "- TypeScript compilation: ✅" >> CHANGELOG.md
+          echo "- Linting & formatting: ✅" >> CHANGELOG.md
+          echo "- Security audit: ✅" >> CHANGELOG.md
+          echo "- Template generation: ✅" >> CHANGELOG.md
+
+      - name: 📦 Create distribution package
+        run: |
+          mkdir -p release-package
+          cp -r dist/ release-package/
+          cp package.json release-package/
+          cp README.md release-package/
+          cp CLAUDE.md release-package/
+          cp config.json release-package/
+          cd release-package && tar -czf ../auth0-template-generator-v${{ steps.version.outputs.version }}.tar.gz .
+
+      - name: 🏷️ Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: 🚀 Auth0 Template Generator v${{ steps.version.outputs.version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+
+      - name: 📦 Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./auth0-template-generator-v${{ steps.version.outputs.version }}.tar.gz
+          asset_name: auth0-template-generator-v${{ steps.version.outputs.version }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: 🎉 Release Success
+        run: |
+          echo "🎉 Release v${{ steps.version.outputs.version }} has been created successfully!"
+          echo "📦 Package: auth0-template-generator-v${{ steps.version.outputs.version }}.tar.gz"
+          echo "🔗 Release URL: ${{ steps.create_release.outputs.html_url }}"

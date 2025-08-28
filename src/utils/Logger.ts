@@ -177,7 +177,7 @@ export class Logger {
             : undefined,
         });
 
-      case 'structured':
+      case 'structured': {
         const parts = [
           entry.timestamp.toISOString(),
           `[${entry.level.toUpperCase()}]`,
@@ -189,9 +189,10 @@ export class Logger {
         }
 
         return parts.join(' ');
+      }
 
       case 'text':
-      default:
+      default: {
         const timestamp = entry.timestamp.toLocaleTimeString();
         const levelStr = entry.level.toUpperCase().padEnd(5);
 
@@ -207,6 +208,7 @@ export class Logger {
         }
 
         return formatted;
+      }
     }
   }
 
@@ -216,7 +218,7 @@ export class Logger {
     this.debug(`File output would be added: ${filePath}`);
 
     // Example implementation:
-    this.outputs.push((entry: LogEntry) => {
+    this.outputs.push(() => {
       // Would write to file here
       // fs.appendFileSync(filePath, this.formatEntry(entry) + '\n');
     });

@@ -9,16 +9,6 @@ export interface FileStats {
   isFile: boolean;
 }
 
-export interface WatchOptions {
-  recursive?: boolean;
-  ignorePatterns?: string[];
-  debounceMs?: number;
-}
-
-export interface FileWatcher {
-  close(): void;
-}
-
 export class FileSystemHelper {
   private readonly logger: Logger;
 
@@ -62,21 +52,6 @@ export class FileSystemHelper {
     }
   }
 
-  async appendTextFile(
-    filePath: string,
-    content: string,
-    encoding: BufferEncoding = 'utf8'
-  ): Promise<void> {
-    try {
-      await fs.ensureDir(path.dirname(filePath));
-      await fs.appendFile(filePath, content, encoding);
-      this.logger.debug(`Appended to file: ${filePath}`, { size: content.length });
-    } catch (error) {
-      this.logger.error(`Failed to append to file: ${filePath}`, { error });
-      throw error;
-    }
-  }
-
   async copyFile(source: string, destination: string): Promise<void> {
     try {
       await fs.ensureDir(path.dirname(destination));
@@ -84,17 +59,6 @@ export class FileSystemHelper {
       this.logger.debug(`Copied file: ${source} -> ${destination}`);
     } catch (error) {
       this.logger.error(`Failed to copy file: ${source} -> ${destination}`, { error });
-      throw error;
-    }
-  }
-
-  async moveFile(source: string, destination: string): Promise<void> {
-    try {
-      await fs.ensureDir(path.dirname(destination));
-      await fs.move(source, destination);
-      this.logger.debug(`Moved file: ${source} -> ${destination}`);
-    } catch (error) {
-      this.logger.error(`Failed to move file: ${source} -> ${destination}`, { error });
       throw error;
     }
   }
@@ -237,73 +201,8 @@ export class FileSystemHelper {
     }
   }
 
-  async createTempFile(prefix: string = 'tmp', suffix: string = '.tmp'): Promise<string> {
-    const tempDir = require('os').tmpdir();
-    const fileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}${suffix}`;
-    const tempPath = path.join(tempDir, fileName);
-
-    // Create empty file
-    await fs.ensureFile(tempPath);
-
-    this.logger.debug(`Created temp file: ${tempPath}`);
-    return tempPath;
-  }
-
-  async createTempDirectory(prefix: string = 'tmp'): Promise<string> {
-    const tempDir = require('os').tmpdir();
-    const dirName = `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const tempPath = path.join(tempDir, dirName);
-
-    await fs.ensureDir(tempPath);
-
-    this.logger.debug(`Created temp directory: ${tempPath}`);
-    return tempPath;
-  }
-
   calculateDirectorySize(dirPath: string): Promise<number> {
     return this.calculateSizeRecursive(dirPath);
-  }
-
-  async getFileHash(
-    filePath: string,
-    algorithm: 'md5' | 'sha1' | 'sha256' = 'sha256'
-  ): Promise<string> {
-    const crypto = require('crypto');
-    const hash = crypto.createHash(algorithm);
-
-    const stream = fs.createReadStream(filePath);
-
-    return new Promise((resolve, reject) => {
-      stream.on('data', (data: Buffer) => hash.update(data));
-      stream.on('end', () => resolve(hash.digest('hex')));
-      stream.on('error', reject);
-    });
-  }
-
-  // Simple file watching (in production, use chokidar or similar)
-  watchFile(
-    filePath: string,
-    callback: (event: 'change' | 'rename', filename?: string) => void
-  ): FileWatcher {
-    const watcher = fs.watch(filePath, callback);
-
-    this.logger.debug(`Started watching file: ${filePath}`);
-
-    return {
-      close: () => {
-        watcher.close();
-        this.logger.debug(`Stopped watching file: ${filePath}`);
-      },
-    };
-  }
-
-  // Utility methods
-  sanitizeFileName(fileName: string): string {
-    // Remove or replace invalid characters
-    return fileName
-      .replace(/[<>:"/\\|?*]/g, '_')
-      .replace(/\s+/g, '_')
-      .substring(0, 255); // Limit length
   }
 
   getRelativePath(from: string, to: string): string {

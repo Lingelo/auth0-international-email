@@ -1,4 +1,4 @@
-import { BaseCommand, CommandResult } from './commands/BaseCommand';
+import { BaseCommand } from './commands/BaseCommand';
 import { BuildCommand } from './commands/BuildCommand';
 import { ValidateCommand } from './commands/ValidateCommand';
 import { AddLanguageCommand } from './commands/AddLanguageCommand';
@@ -85,7 +85,16 @@ export class CliApp {
   }
 
   private registerCommands(): void {
-    this.commands.set('init', new InitCommand('init', 'Initialize a new Auth0 template project', this.logger, this.configLoader, this.fileSystem));
+    this.commands.set(
+      'init',
+      new InitCommand(
+        'init',
+        'Initialize a new Auth0 template project',
+        this.logger,
+        this.configLoader,
+        this.fileSystem
+      )
+    );
     this.commands.set('build', new BuildCommand(this.logger, this.configLoader, this.cacheService));
     this.commands.set(
       'validate',
