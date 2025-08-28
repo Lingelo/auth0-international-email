@@ -11,8 +11,12 @@
         "companyName": "Auth0",
         "supportEmail": "support@auth0.com"
       },
-      "preprocessors": ["minifier"],
-      "postprocessors": ["asset-optimizer"]
+      "preprocessors": [
+        "minifier"
+      ],
+      "postprocessors": [
+        "asset-optimizer"
+      ]
     },
     {
       "name": "password_reset",
@@ -37,13 +41,6 @@
       "name": "Français (France)",
       "enabled": true,
       "priority": 2,
-      "fallback": "en-US"
-    },
-    {
-      "code": "es-ES",
-      "name": "Español (España)",
-      "enabled": true,
-      "priority": 3,
       "fallback": "en-US"
     }
   ],
@@ -80,7 +77,9 @@
     {
       "name": "html-validator",
       "enabled": true,
-      "runBefore": ["minifier"],
+      "runBefore": [
+        "minifier"
+      ],
       "options": {
         "strict": false,
         "format": "text"
@@ -89,7 +88,9 @@
     {
       "name": "minifier",
       "enabled": true,
-      "runAfter": ["html-validator"],
+      "runAfter": [
+        "html-validator"
+      ],
       "options": {
         "removeComments": true,
         "removeWhitespace": true,
@@ -99,7 +100,9 @@
     {
       "name": "asset-optimizer",
       "enabled": false,
-      "runAfter": ["minifier"],
+      "runAfter": [
+        "minifier"
+      ],
       "options": {
         "optimizeImages": true,
         "inlineSmallAssets": true,

@@ -1,12 +1,13 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import inquirer from 'inquirer';
 import { BaseCommand, CommandOptions, CommandResult } from './BaseCommand';
 import { ProjectConfiguration, LanguageConfiguration } from '../../core/interfaces/Config';
 import { Logger } from '../../utils/Logger';
 import { ConfigLoader } from '../../utils/ConfigLoader';
 
 export interface AddLanguageCommandOptions extends CommandOptions {
-  code: string;
+  code?: string;
   name?: string;
   interactive?: boolean;
   copy?: string; // Copy translations from existing language
@@ -24,21 +25,28 @@ export class AddLanguageCommand extends BaseCommand {
 
   async execute(options: AddLanguageCommandOptions): Promise<CommandResult> {
     try {
-      const missing = this.validateRequiredOptions(options, ['code']);
-      if (missing.length > 0) {
-        return this.createErrorResult(`Missing required options: ${missing.join(', ')}`);
+      this.logger.info('🌍 Add a new language to your project');
+
+      // Load current configuration first
+      const configPath = 'config.json';
+      const config = await this.configLoader.loadConfiguration(configPath);
+
+      // If no code provided, run interactive mode
+      if (!options.code) {
+        const languageInfo = await this.runInteractiveSetup(config);
+        options.code = languageInfo.code;
+        options.name = languageInfo.name;
+        options.copy = languageInfo.copy;
+        options.enabled = languageInfo.enabled;
+        options.priority = languageInfo.priority;
       }
 
-      const languageCode = options.code.toLowerCase();
-      
-      // Validate language code format
-      if (!this.isValidLanguageCode(languageCode)) {
+      // Validate language code format before normalizing
+      if (!this.isValidLanguageCode(options.code!)) {
         return this.createErrorResult('Invalid language code format. Use format like "en-US", "fr-FR", etc.');
       }
 
-      // Load current configuration
-      const configPath = 'config.json';
-      const config = await this.configLoader.loadConfiguration(configPath);
+      const languageCode = options.code!;
 
       // Check if language already exists
       if (config.languages.some(l => l.code === languageCode)) {
@@ -100,18 +108,209 @@ export class AddLanguageCommand extends BaseCommand {
   }
 
   getUsage(): string {
-    return 'add-language --code <code> [options]\n\n' +
+    return 'add-language [options]\n\n' +
+           'Run without options for interactive setup (recommended).\n\n' +
            'Options:\n' +
            '  --code <code>        Language code (e.g., en-US, fr-FR, es-ES)\n' +
            '  --name <name>        Human-readable language name\n' +
-           '  --interactive        Interactive setup with prompts\n' +
            '  --copy <code>        Copy translations from existing language\n' +
            '  --priority <n>       Language priority (default: last)\n' +
            '  --enabled            Enable language (default: true)\n\n' +
            'Examples:\n' +
+           '  add-language                                    # Interactive setup\n' +
            '  add-language --code es-ES --name "Spanish (Spain)"\n' +
-           '  add-language --code de-DE --copy en-US --interactive\n' +
-           '  add-language --code ja-JP --priority 1';
+           '  add-language --code de-DE --copy en-US';
+  }
+
+  private async runInteractiveSetup(config: ProjectConfiguration): Promise<{
+    code: string;
+    name: string;
+    copy?: string;
+    enabled: boolean;
+    priority: number;
+  }> {
+    const predefinedLanguages = [
+      { code: 'en-US', name: 'English (United States)' },
+      { code: 'en-GB', name: 'English (United Kingdom)' },
+      { code: 'fr-FR', name: 'Français (France)' },
+      { code: 'fr-CA', name: 'Français (Canada)' },
+      { code: 'es-ES', name: 'Español (España)' },
+      { code: 'es-MX', name: 'Español (México)' },
+      { code: 'de-DE', name: 'Deutsch (Deutschland)' },
+      { code: 'it-IT', name: 'Italiano (Italia)' },
+      { code: 'pt-BR', name: 'Português (Brasil)' },
+      { code: 'pt-PT', name: 'Português (Portugal)' },
+      { code: 'ru-RU', name: 'русский (Россия)' },
+      { code: 'ja-JP', name: '日本語 (日本)' },
+      { code: 'ko-KR', name: '한국어 (대한민국)' },
+      { code: 'zh-CN', name: '中文 (中国)' },
+      { code: 'zh-TW', name: '中文 (台灣)' },
+      { code: 'ar-SA', name: 'العربية (السعودية)' },
+      { code: 'hi-IN', name: 'हिन्दी (भारत)' },
+      { code: 'nl-NL', name: 'Nederlands (Nederland)' },
+      { code: 'sv-SE', name: 'Svenska (Sverige)' },
+      { code: 'da-DK', name: 'Dansk (Danmark)' },
+      { code: 'no-NO', name: 'Norsk (Norge)' },
+      { code: 'fi-FI', name: 'Suomi (Suomi)' }
+    ];
+
+    // Filter out already existing languages
+    const existingCodes = new Set(config.languages.map(l => l.code));
+    const availableLanguages = predefinedLanguages.filter(lang => !existingCodes.has(lang.code));
+
+    let languageChoice: { method: string };
+
+    if (availableLanguages.length === 0) {
+      this.logger.info('ℹ️  All predefined languages are already added. You can add a custom language.');
+      languageChoice = { method: 'custom' };
+    } else {
+      languageChoice = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'method',
+          message: 'How would you like to add a language?',
+          choices: [
+            {
+              name: '🌍 Choose from predefined languages',
+              value: 'predefined'
+            },
+            {
+              name: '✏️  Enter custom language details',
+              value: 'custom'
+            }
+          ]
+        }
+      ]);
+    }
+
+    let languageCode: string;
+    let languageName: string;
+
+    if (languageChoice.method === 'predefined') {
+      const predefinedChoice = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'selectedLanguage',
+          message: 'Select a language to add:',
+          choices: availableLanguages.map(lang => ({
+            name: `${lang.name} (${lang.code})`,
+            value: lang
+          }))
+        }
+      ]);
+      languageCode = predefinedChoice.selectedLanguage.code;
+      languageName = predefinedChoice.selectedLanguage.name;
+    } else {
+      const customAnswers = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'code',
+          message: 'Enter language code (e.g., en-US, fr-FR, pt-BR):',
+          validate: (input: string) => {
+            if (!input.trim()) return 'Language code is required';
+            if (!this.isValidLanguageCode(input)) return 'Invalid format. Use format like "en-US", "fr-FR", "pt-BR"';
+            if (existingCodes.has(input)) return 'This language already exists';
+            return true;
+          }
+        },
+        {
+          type: 'input',
+          name: 'name',
+          message: 'Enter language display name (e.g., "English (Canada)", "Português (Brasil)"):',
+          validate: (input: string) => input.trim() ? true : 'Language name is required'
+        }
+      ]);
+      languageCode = customAnswers.code;
+      languageName = customAnswers.name;
+    }
+
+    // Show current language priorities for reference
+    this.logger.info('\n📊 Current language priorities:');
+    config.languages
+      .sort((a, b) => a.priority - b.priority)
+      .forEach((lang, index) => {
+        this.logger.info(`  ${lang.priority}. ${lang.name} (${lang.code}) ${lang.enabled ? '✅' : '❌'}`);
+      });
+
+    // Additional configuration
+    const configAnswers = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'enabled',
+        message: 'Enable this language immediately?',
+        default: true
+      },
+      {
+        type: 'list',
+        name: 'priorityChoice',
+        message: 'How do you want to set the priority?',
+        choices: [
+          {
+            name: `🔄 Add at the end (priority ${config.languages.length + 1})`,
+            value: 'end'
+          },
+          {
+            name: '⬆️  Add at the beginning (priority 1, shifts others)',
+            value: 'beginning'
+          },
+          {
+            name: '✏️  Enter custom priority',
+            value: 'custom'
+          }
+        ]
+      },
+      {
+        type: 'number',
+        name: 'customPriority',
+        message: 'Enter priority (lower = higher priority):',
+        when: (answers) => answers.priorityChoice === 'custom',
+        validate: (input: number) => {
+          if (!input || input < 1) return 'Priority must be a positive number';
+          if (input > config.languages.length + 1) return `Priority cannot be higher than ${config.languages.length + 1}`;
+          return true;
+        }
+      },
+      {
+        type: 'list',
+        name: 'copyFrom',
+        message: 'How do you want to initialize translations?',
+        choices: [
+          { name: '📝 Start with empty translations (recommended)', value: 'empty' },
+          ...config.languages.map(lang => ({
+            name: `📋 Copy from ${lang.name} (${lang.code})`,
+            value: lang.code
+          }))
+        ]
+      }
+    ]);
+
+    // Calculate final priority
+    let finalPriority: number;
+    switch (configAnswers.priorityChoice) {
+      case 'beginning':
+        finalPriority = 1;
+        // Shift all existing priorities up by 1
+        config.languages.forEach(lang => lang.priority++);
+        break;
+      case 'custom':
+        finalPriority = configAnswers.customPriority;
+        // Shift priorities of languages with same or higher priority
+        config.languages
+          .filter(lang => lang.priority >= finalPriority)
+          .forEach(lang => lang.priority++);
+        break;
+      default: // 'end'
+        finalPriority = config.languages.length + 1;
+        break;
+    }
+
+    return {
+      code: languageCode,
+      name: languageName,
+      enabled: configAnswers.enabled,
+      priority: finalPriority,
+      copy: configAnswers.copyFrom !== 'empty' ? configAnswers.copyFrom : undefined
+    };
   }
 
   private isValidLanguageCode(code: string): boolean {

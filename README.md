@@ -64,6 +64,8 @@ dist/output/       # Generated templates for Auth0
    ```bash
    yarn add-language
    ```
+   
+   This will show you a list of available languages to choose from, plus configuration options.
 
 2. **Manual way**:
    - Create `src/languages/{locale}.json` with translations
